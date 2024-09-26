@@ -1,3 +1,5 @@
+//Data
+
 const api = axios.create({
   baseURL: 'https://api.themoviedb.org/3/',
   headers: {
@@ -8,6 +10,38 @@ const api = axios.create({
   },
 });
 
+function likedMoviesList() {
+  const item = JSON.parse (localStorage.getItem('liked_movies'));
+  let movies;
+
+  if (item) {
+    movies=item;
+  }else{
+    movies= {}
+  }
+
+  return movies
+}
+
+function likeMovie(movie) {
+  //movie.id
+  const  likedMovies = likedMoviesList()
+  console.log(likedMovies);
+  
+
+  if (likedMovies[movie.id]) {
+    console.log('La pelicula ya esta en la localStorage deberiamos Eliminarla');
+    likedMovies[movie.id]=undefined;
+    
+    //Eliminar de localStorage
+   }else{
+    console.log('La pelicula no esta en localStoragedeberiamos Agregarla');
+        likedMovies[movie.id]= movie;
+
+        //Agregar al localStorage
+    }
+    localStorage.setItem('liked_movies' , JSON.stringify( likedMovies));
+}
 
 // Utils
 
@@ -35,9 +69,7 @@ function createMovies(
   movies.forEach(movie => {
     const movieContainer = document.createElement('div');
     movieContainer.classList.add('movie-container');
-    movieContainer.addEventListener('click', () => {
-      location.hash = '#movie=' + movie.id;
-    });
+
 
     const movieImg = document.createElement('img');
     movieImg.classList.add('movie-img');
@@ -46,6 +78,9 @@ function createMovies(
       lazyLoad ? 'data-img' : 'src',
       'https://image.tmdb.org/t/p/w300' + movie.poster_path,
     );
+    movieImg.addEventListener('click', () => {
+      location.hash = '#movie=' + movie.id;
+    });
     movieImg.addEventListener('error', () => {
       movieImg.setAttribute(
         'src',
@@ -53,11 +88,21 @@ function createMovies(
       );
     })
 
+    const movieBtn = document.createElement('button');
+    movieBtn.classList.add('movie-btn');
+    likedMoviesList()[movie.id] && movieBtn.classList.add('movie-btn--liked');
+    likeMovie(movie);
+    movieBtn.addEventListener('click', () => {
+      movieBtn.classList.toggle('movie-btn--liked');
+      likeMovie(movie);
+    });
+
     if (lazyLoad) {
       lazyLoader.observe(movieImg);
     }
 
     movieContainer.appendChild(movieImg);
+    movieContainer.appendChild(movieBtn);
     container.appendChild(movieContainer);
   });
 }
@@ -253,4 +298,18 @@ async function getRelatedMoviesId(id) {
   /*viendo la documentación de la api la url para las pelis similares es /movie/{movie_id}/similar, ellos dan un aviso que dice que el endpoint de recomendación es diferente, igual muy buen curso, aprendí mucho :3*/
 
  
+function getLikedMovies() {
+  const likedMovies = likedMoviesList();
+  const moviesArray =  Object.values(likedMovies);
 
+  createMovies(
+  moviesArray,
+  likedMoviesListArticle,
+  {
+    lazyLoad : true,
+    clean : true,
+  },
+)
+  console.log('holi',likedMovies);
+  
+}
